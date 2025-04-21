@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Flight - Airline Reservation System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <style>
+        /* Custom CSS for modal dialog */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 5px;
+            width: 50%;
+            max-width: 500px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .modal-title {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container header-container">
+            <div class="logo">
+                <i class="fas fa-plane"></i>
+                <span>Airline Reservation System</span>
+            </div>
+            <div class="user-section" sec:authorize="isAuthenticated()">
+                <div class="user-info">
+                    <span>Welcome, <strong sec:authentication="name"></strong>!</span>
+                </div>
+                <form action="/logout" method="post">
+                    <button type="submit" class="btn btn-danger">Logout</button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="container nav-container">
+            <ul class="nav-menu" sec:authorize="hasRole('ADMIN')">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/showAllFlights">View Flights</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/addUpdateFlights">Manage Flights</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/deleteFlight">Delete Flights</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <h1 class="page-title">Manage Flight</h1>
+            
+            <div id="error-container" class="alert alert-danger" style="display: none;">
+                <span id="error-message"></span>
+            </div>
+            
+            <div id="success-container" class="alert alert-success" style="display: none;">
+                <span id="success-message"></span>
+            </div>
+
+            <div class="form-container">
+                <form id="updateFlightForm" method="post">
+                    <div class="form-group">
+                        <label for="flightNumber" class="form-label">Flight Number</label>
+                        <input type="text" id="flightNumberInput" name="flightNumber" class="form-control" required>
+                        <button type="button" id="checkFlightBtn" class="btn btn-info" style="margin-top: 10px;">Check Flight</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="price" class="form-label">Price</label>
+                        <input type="number" id="price" name="price" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="origin" class="form-label">Origin</label>
+                        <input type="text" id="origin" name="origin" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="destination" class="form-label">Destination</label>
+                        <input type="text" id="destination" name="destination" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="departureTime" class="form-label">Departure Time (yyyy-MM-dd HH:mm)</label>
+                        <input type="text" id="departureTime" name="departureTime" class="form-control" placeholder="2024-04-21 14:30" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="arrivalTime" class="form-label">Arrival Time (yyyy-MM-dd HH:mm)</label>
+                        <input type="text" id="arrivalTime" name="arrivalTime" class="form-control" placeholder="2024-04-21 16:30" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description" class="form-label">Description</label>
+                        <input type="text" id="description" name="description" class="form-control" required>
+                    </div>
+                    
+                    <h3 style="margin-top: 2rem; margin-bottom: 1rem;">Aircraft Information</h3>
+                    
+                    <div class="form-group">
+                        <label for="capacity" class="form-label">Capacity</label>
+                        <input type="number" id="capacity" name="capacity" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="model" class="form-label">Model</label>
+                        <input type="text" id="model" name="model" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="manufacturer" class="form-label">Manufacturer</label>
+                        <input type="text" id="manufacturer" name="manufacturer" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="yearOfManufacture" class="form-label">Year of Manufacture</label>
+                        <input type="number" id="yearOfManufacture" name="yearOfManufacture" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: 2rem;">
+                        <button type="button" id="submitBtn" class="btn btn-primary">Submit</button>
+                        <button type="button" class="btn btn-secondary" onclick="window.location.href='/'">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Confirmation Dialog Modal -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title" id="modal-title">Flight Status</div>
+            <p id="modal-message">Confirmation message will appear here.</p>
+            <div class="modal-buttons">
+                <button id="modal-cancel" class="btn btn-secondary">Cancel</button>
+                <button id="modal-confirm" class="btn btn-primary">Proceed</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="copyright">
+                &copy; 2024 Airline Reservation System. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+      // Function to check if flight exists
+      function checkFlightExists(flightNumber) {
+          return fetch('/flight/' + flightNumber, {
+              method: 'GET',
+              headers: {
+                  'Content-Type': 'application/json'
+              }
+          })
+          .then(response => {
+              if (response.ok) {
+                  return true; // Flight exists
+              } else if (response.status === 404) {
+                  return false; // Flight doesn't exist
+              } else {
+                  throw new Error('Error checking flight status');
+              }
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              return false; // Assume flight doesn't exist if there's an error
+          });
+      }
+      
+      // Function to show modal with specific message
+      function showModal(title, message, confirmText) {
+          document.getElementById('modal-title').textContent = title;
+          document.getElementById('modal-message').textContent = message;
+          document.getElementById('modal-confirm').textContent = confirmText;
+          document.getElementById('confirmationModal').style.display = 'block';
+      }
+      
+      // Function to hide modal
+      function hideModal() {
+          document.getElementById('confirmationModal').style.display = 'none';
+      }
+      
+      // Function to submit form
+      function submitForm() {
+          var flightNumberInput = document.getElementById("flightNumberInput").value;
+          if (flightNumberInput.trim() === "") {
+              document.getElementById('error-container').style.display = 'block';
+              document.getElementById('error-message').textContent = 'Please enter a valid flight number.';
+              return false;
+          }
+          
+          var form = document.getElementById("updateFlightForm");
+          form.action = "/flight/" + flightNumberInput;
+          
+          // Submit form using fetch
+          var formData = new FormData(form);
+          fetch(form.action, {
+              method: 'POST',
+              body: formData
+          })
+          .then(response => {
+              if (!response.ok) {
+                  return response.json().then(err => {
+                      throw new Error(err.badRequest ? err.badRequest.message : 'Failed to process flight');
+                  });
+              }
+              return response.json();
+          })
+          .then(data => {
+              // Success - clear the form and show success message
+              form.reset();
+              document.getElementById('success-container').style.display = 'block';
+              document.getElementById('success-message').textContent = 'Flight ' + flightNumberInput + ' has been successfully saved.';
+              document.getElementById('error-container').style.display = 'none';
+          })
+          .catch(error => {
+              document.getElementById('error-container').style.display = 'block';
+              document.getElementById('error-message').textContent = error.message;
+              document.getElementById('success-container').style.display = 'none';
+          });
+      }
+      
+      // Initialize event listeners when page loads
+      window.onload = function() {
+          // Handle Check Flight button click
+          document.getElementById('checkFlightBtn').addEventListener('click', function() {
+              var flightNumber = document.getElementById('flightNumberInput').value;
+              
+              if (!flightNumber.trim()) {
+                  document.getElementById('error-container').style.display = 'block';
+                  document.getElementById('error-message').textContent = 'Please enter a flight number to check.';
+                  return;
+              }
+              
+              document.getElementById('error-container').style.display = 'none';
+              
+              // Check if flight exists
+              checkFlightExists(flightNumber)
+                  .then(exists => {
+                      if (exists) {
+                          // Show confirmation dialog for updating
+                          showModal(
+                              'Flight Found',
+                              'Flight ' + flightNumber + ' already exists. Do you want to update its details?',
+                              'Update'
+                          );
+                      } else {
+                          // Show confirmation dialog for creating
+                          showModal(
+                              'New Flight',
+                              'Flight ' + flightNumber + ' does not exist. Do you want to create it with these details?',
+                              'Create'
+                          );
+                      }
+                  });
+          });
+          
+          // Handle Submit button click
+          document.getElementById('submitBtn').addEventListener('click', function() {
+              var flightNumber = document.getElementById('flightNumberInput').value;
+              
+              if (!flightNumber.trim()) {
+                  document.getElementById('error-container').style.display = 'block';
+                  document.getElementById('error-message').textContent = 'Please enter a valid flight number.';
+                  return;
+              }
+              
+              // Check if flight exists before submitting
+              checkFlightExists(flightNumber)
+                  .then(exists => {
+                      if (exists) {
+                          // Show confirmation dialog for updating
+                          showModal(
+                              'Update Flight',
+                              'Flight ' + flightNumber + ' already exists. Do you want to update its details?',
+                              'Update'
+                          );
+                      } else {
+                          // Show confirmation dialog for creating
+                          showModal(
+                              'Create Flight',
+                              'Flight ' + flightNumber + ' does not exist. Do you want to create it with these details?',
+                              'Create'
+                          );
+                      }
+                  });
+          });
+          
+          // Handle modal confirmation
+          document.getElementById('modal-confirm').addEventListener('click', function() {
+              hideModal();
+              submitForm();
+          });
+          
+          // Handle modal cancellation
+          document.getElementById('modal-cancel').addEventListener('click', function() {
+              hideModal();
+          });
+      };
+  </script>
+</body>
+</html>

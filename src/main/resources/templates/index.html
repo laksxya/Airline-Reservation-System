@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" 
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airline Reservation System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container header-container">
+            <div class="logo">
+                <i class="fas fa-plane"></i>
+                <span>Airline Reservation System</span>
+            </div>
+            <div class="user-section" sec:authorize="isAuthenticated()">
+                <div class="user-info">
+                    <span>Welcome, <strong sec:authentication="name"></strong>!</span>
+                </div>
+                <form action="/logout" method="post">
+                    <button type="submit" class="btn btn-danger">Logout</button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <div sec:authorize="!isAuthenticated()" class="auth-container">
+                <div class="auth-form">
+                    <h2 class="auth-title">Welcome to Airline Reservation System</h2>
+                    <p style="text-align: center; margin-bottom: 2rem;">Please log in or sign up to access the system.</p>
+                    <div style="display: flex; justify-content: center; gap: 1rem;">
+                        <a href="/login" class="btn btn-primary">Login</a>
+                        <a href="/signup" class="btn btn-secondary">Sign Up</a>
+                    </div>
+                </div>
+            </div>
+
+            <div sec:authorize="isAuthenticated()">
+                <!-- Admin Dashboard -->
+                <div sec:authorize="hasRole('ADMIN')">
+                    <h1 class="page-title">Admin Dashboard</h1>
+                    <div class="dashboard">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title"><i class="fas fa-plane"></i> Flight Management</h3>
+                            </div>
+                            <div class="card-body">
+                                <p>Add, update, or remove flights.</p>
+                            </div>
+                            <div class="card-footer">
+                                <a href="/addUpdateFlights" class="btn btn-primary">Manage Flights</a>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title"><i class="fas fa-list"></i> View Flights</h3>
+                            </div>
+                            <div class="card-body">
+                                <p>View all available flights in the system.</p>
+                            </div>
+                            <div class="card-footer">
+                                <a href="/showAllFlights" class="btn btn-primary">View Flights</a>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title"><i class="fas fa-trash-alt"></i> Delete Flights</h3>
+                            </div>
+                            <div class="card-body">
+                                <p>Remove flights that are no longer needed.</p>
+                            </div>
+                            <div class="card-footer">
+                                <a href="/deleteFlight" class="btn btn-danger">Delete Flights</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Dashboard -->
+                <div sec:authorize="hasRole('USER')">
+                    <h1 class="page-title">Welcome to Airline Reservation System</h1>
+                    <div class="dashboard">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title"><i class="fas fa-plane"></i> Flights</h3>
+                            </div>
+                            <div class="card-body">
+                                <p>View all available flights and detailed information.</p>
+                            </div>
+                            <div class="card-footer">
+                                <a href="/showAllFlights" class="btn btn-primary">View Flights</a>
+                                <a href="/showParticularFlightDetails" class="btn btn-secondary">Flight Details</a>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title"><i class="fas fa-users"></i> Passengers</h3>
+                            </div>
+                            <div class="card-body">
+                                <p>Manage or view passengers for your reservations.</p>
+                            </div>
+                            <div class="card-footer">
+                                <a href="/createPassenger" class="btn btn-primary">Add Passenger</a>
+                                <a href="/getPassengerDetails" class="btn btn-secondary">View Passengers</a>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title"><i class="fas fa-ticket-alt"></i> Reservations</h3>
+                            </div>
+                            <div class="card-body">
+                                <p>Create and manage reservations for your flights.</p>
+                            </div>
+                            <div class="card-footer">
+                                <a href="/createReservation" class="btn btn-primary">New Reservation</a>
+                                <a href="/getReservation" class="btn btn-secondary">View Reservations</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="copyright">
+                &copy; 2024 Airline Reservation System. All rights reserved.
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

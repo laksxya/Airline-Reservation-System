@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Passenger - Airline Reservation System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container header-container">
+            <div class="logo">
+                <i class="fas fa-plane"></i>
+                <span>Airline Reservation System</span>
+            </div>
+            <div class="user-section" sec:authorize="isAuthenticated()">
+                <div class="user-info">
+                    <span>Welcome, <strong sec:authentication="name"></strong>!</span>
+                </div>
+                <form action="/logout" method="post">
+                    <button type="submit" class="btn btn-danger">Logout</button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="container nav-container">
+            <ul class="nav-menu" sec:authorize="hasRole('USER')">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/showAllFlights">Flights</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/showParticularFlightDetails">Flight Details</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/getPassengerDetails">Passengers</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/getReservation">Reservations</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <h1 class="page-title">Update Passenger</h1>
+
+            <div id="error-container" class="alert alert-danger" style="display: none;">
+                <span id="error-message"></span>
+            </div>
+
+            <div id="success-container" class="alert alert-success" style="display: none;">
+                <span id="success-message"></span>
+            </div>
+
+            <div class="form-container">
+                <form id="updatePassengerForm">
+                    <div class="form-group">
+                        <label for="id" class="form-label">Passenger ID</label>
+                        <input type="text" id="id" name="id" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="firstname" class="form-label">First Name</label>
+                        <input type="text" id="firstname" name="firstname" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="lastname" class="form-label">Last Name</label>
+                        <input type="text" id="lastname" name="lastname" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="age" class="form-label">Age</label>
+                        <input type="number" id="age" name="age" class="form-control" min="1" max="120" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="gender" class="form-label">Gender</label>
+                        <select id="gender" name="gender" class="form-select" required>
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="text" id="phone" name="phone" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="xml" class="form-label">XML (Optional)</label>
+                        <input type="text" id="xml" name="xml" class="form-control">
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: 2rem;">
+                        <button type="submit" class="btn btn-primary">Update Passenger</button>
+                        <button type="button" class="btn btn-secondary" onclick="window.location.href='/getPassengerDetails'">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="copyright">
+                &copy; 2024 Airline Reservation System. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById("updatePassengerForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(this);
+            const id = formData.get("id");
+            
+            if (!id.trim()) {
+                document.getElementById('error-container').style.display = 'block';
+                document.getElementById('error-message').textContent = 'Please enter a valid passenger ID.';
+                return;
+            }
+            
+            const endpoint = "/passenger/" + id;
+            
+            fetch(endpoint, {
+                method: "PUT",
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.message || 'Failed to update passenger');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('success-container').style.display = 'block';
+                document.getElementById('success-message').textContent = 'Passenger updated successfully!';
+                document.getElementById('error-container').style.display = 'none';
+            })
+            .catch(error => {
+                document.getElementById('error-container').style.display = 'block';
+                document.getElementById('error-message').textContent = error.message;
+                document.getElementById('success-container').style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Reservation - Airline Reservation System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container header-container">
+            <div class="logo">
+                <i class="fas fa-plane"></i>
+                <span>Airline Reservation System</span>
+            </div>
+            <div class="user-section" sec:authorize="isAuthenticated()">
+                <div class="user-info">
+                    <span>Welcome, <strong sec:authentication="name"></strong>!</span>
+                </div>
+                <form action="/logout" method="post">
+                    <button type="submit" class="btn btn-danger">Logout</button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="container nav-container">
+            <ul class="nav-menu" sec:authorize="hasRole('USER')">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/showAllFlights">Flights</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/showParticularFlightDetails">Flight Details</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/getPassengerDetails">Passengers</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/getReservation">Reservations</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <h1 class="page-title">Create New Reservation</h1>
+
+            <div id="error-container" class="alert alert-danger" style="display: none;">
+                <span id="error-message"></span>
+            </div>
+
+            <div id="success-container" class="alert alert-success" style="display: none;">
+                <span id="success-message"></span>
+            </div>
+
+            <div class="form-container">
+                <form id="reservationForm">
+                    <div class="form-group">
+                        <label for="passengerId" class="form-label">Passenger ID</label>
+                        <input type="text" id="passengerId" name="passengerId" class="form-control" required>
+                        <div class="form-text">Enter the ID of an existing passenger.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Flight Number</label>
+                        <div id="flightSelections">
+                            <div class="flight-selection">
+                                <input type="text" name="flightNumbers[]" class="form-control" placeholder="Enter flight number" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 20px;">
+                        <button type="submit" class="btn btn-primary">Create Reservation</button>
+                        <button type="button" class="btn btn-secondary" onclick="window.location.href='/'">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="copyright">
+                &copy; 2024 Airline Reservation System. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Form submission
+            const reservationForm = document.getElementById('reservationForm');
+            
+            reservationForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                
+                const passengerId = document.getElementById('passengerId').value.trim();
+                const flightNumber = document.querySelector('input[name="flightNumbers[]"]').value.trim();
+                
+                if (!passengerId) {
+                    showError('Please enter a passenger ID');
+                    return;
+                }
+                
+                if (!flightNumber) {
+                    showError('Please enter a flight number');
+                    return;
+                }
+                
+                // Prepare data for the API call
+                fetch('/reservation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        'passengerId': passengerId,
+                        'flightNumbers': flightNumber
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            if (err.badRequest && err.badRequest.message) {
+                                throw new Error(err.badRequest.message);
+                            } else {
+                                throw new Error(err.message || 'Failed to create reservation');
+                            }
+                        });
+                    }
+                    return response.json();
+                })
+                .then(reservation => {
+                    showSuccess(`Reservation created successfully with number: ${reservation.reservationNumber}`);
+                    reservationForm.reset();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showError(error.message);
+                });
+            });
+            
+            function showError(message) {
+                const errorContainer = document.getElementById('error-container');
+                const errorMessage = document.getElementById('error-message');
+                
+                errorMessage.textContent = message;
+                errorContainer.style.display = 'block';
+                document.getElementById('success-container').style.display = 'none';
+                
+                // Scroll to the error
+                errorContainer.scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            function showSuccess(message) {
+                const successContainer = document.getElementById('success-container');
+                const successMessage = document.getElementById('success-message');
+                
+                successMessage.textContent = message;
+                successContainer.style.display = 'block';
+                document.getElementById('error-container').style.display = 'none';
+                
+                // Scroll to the success message
+                successContainer.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    </script>
+</body>
+</html>

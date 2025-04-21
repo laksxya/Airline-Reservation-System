@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Details - Airline Reservation System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container header-container">
+            <div class="logo">
+                <i class="fas fa-plane"></i>
+                <span>Airline Reservation System</span>
+            </div>
+            <div class="user-section" sec:authorize="isAuthenticated()">
+                <div class="user-info">
+                    <span>Welcome, <strong sec:authentication="name"></strong>!</span>
+                </div>
+                <form action="/logout" method="post">
+                    <button type="submit" class="btn btn-danger">Logout</button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="container nav-container">
+            <ul class="nav-menu" sec:authorize="hasRole('USER')">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/showAllFlights">Flights</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/showParticularFlightDetails">Flight Details</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/getPassengerDetails">Passengers</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/getReservation">Reservations</a>
+                </li>
+            </ul>
+            <ul class="nav-menu" sec:authorize="hasRole('ADMIN')">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/showAllFlights">Flights</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/showParticularFlightDetails">Flight Details</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/addUpdateFlights">Manage Flights</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <h1 class="page-title">Flight Details</h1>
+
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="flightNumber" class="form-label">Flight Number</label>
+                    <input type="text" id="flightNumber" class="form-control" placeholder="Enter flight number">
+                </div>
+                <button id="searchButton" class="btn btn-primary">Search</button>
+            </div>
+
+            <div id="error-container" class="alert alert-danger" style="display: none; margin-top: 20px;">
+                <span id="error-message"></span>
+            </div>
+
+            <div id="flight-details" style="display: none; margin-top: 20px;">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title" id="flight-title">Flight Details</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table class="table">
+                                <tr>
+                                    <th>Flight Number</th>
+                                    <td id="detail-flightNumber"></td>
+                                </tr>
+                                <tr>
+                                    <th>Origin</th>
+                                    <td id="detail-origin"></td>
+                                </tr>
+                                <tr>
+                                    <th>Destination</th>
+                                    <td id="detail-destination"></td>
+                                </tr>
+                                <tr>
+                                    <th>Departure Time</th>
+                                    <td id="detail-departureTime"></td>
+                                </tr>
+                                <tr>
+                                    <th>Arrival Time</th>
+                                    <td id="detail-arrivalTime"></td>
+                                </tr>
+                                <tr>
+                                    <th>Price</th>
+                                    <td id="detail-price"></td>
+                                </tr>
+                                <tr>
+                                    <th>Seats Available</th>
+                                    <td id="detail-seatsLeft"></td>
+                                </tr>
+                                <tr>
+                                    <th>Description</th>
+                                    <td id="detail-description"></td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div style="margin-top: 20px;">
+                            <h4>Aircraft Information</h4>
+                            <div class="table-container">
+                                <table class="table">
+                                    <tr>
+                                        <th>Model</th>
+                                        <td id="detail-plane-model"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Manufacturer</th>
+                                        <td id="detail-plane-manufacturer"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Capacity</th>
+                                        <td id="detail-plane-capacity"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Year of Manufacture</th>
+                                        <td id="detail-plane-year"></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="copyright">
+                &copy; 2024 Airline Reservation System. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchButton = document.getElementById('searchButton');
+            
+            searchButton.addEventListener('click', function() {
+                const flightNumber = document.getElementById('flightNumber').value.trim();
+                
+                if (!flightNumber) {
+                    showError('Please enter a flight number');
+                    return;
+                }
+                
+                fetch(`/flight/${flightNumber}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            if (response.status === 404) {
+                                throw new Error('Flight not found');
+                            }
+                            throw new Error('Error fetching flight details');
+                        }
+                        return response.json();
+                    })
+                    .then(flight => {
+                        displayFlightDetails(flight);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showError(error.message);
+                    });
+            });
+            
+            function displayFlightDetails(flight) {
+                // Hide error message if it was shown
+                document.getElementById('error-container').style.display = 'none';
+                
+                // Format dates
+                const departureDate = new Date(flight.departureTime);
+                const arrivalDate = new Date(flight.arrivalTime);
+                const formatDate = (date) => {
+                    return date.toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                };
+                
+                // Populate flight details
+                document.getElementById('flight-title').textContent = `Flight ${flight.flightNumber} Details`;
+                document.getElementById('detail-flightNumber').textContent = flight.flightNumber;
+                document.getElementById('detail-origin').textContent = flight.origin;
+                document.getElementById('detail-destination').textContent = flight.destination;
+                document.getElementById('detail-departureTime').textContent = formatDate(departureDate);
+                document.getElementById('detail-arrivalTime').textContent = formatDate(arrivalDate);
+                document.getElementById('detail-price').textContent = `$${flight.price}`;
+                document.getElementById('detail-seatsLeft').textContent = flight.seatsLeft;
+                document.getElementById('detail-description').textContent = flight.description || 'N/A';
+                
+                // Populate plane details if available
+                if (flight.plane) {
+                    document.getElementById('detail-plane-model').textContent = flight.plane.model || 'N/A';
+                    document.getElementById('detail-plane-manufacturer').textContent = flight.plane.manufacturer || 'N/A';
+                    document.getElementById('detail-plane-capacity').textContent = flight.plane.capacity || 'N/A';
+                    document.getElementById('detail-plane-year').textContent = flight.plane.yearOfManufacture || 'N/A';
+                }
+                
+                // Show the details section
+                document.getElementById('flight-details').style.display = 'block';
+            }
+            
+            function showError(message) {
+                const errorContainer = document.getElementById('error-container');
+                const errorMessage = document.getElementById('error-message');
+                
+                errorMessage.textContent = message;
+                errorContainer.style.display = 'block';
+                document.getElementById('flight-details').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
+

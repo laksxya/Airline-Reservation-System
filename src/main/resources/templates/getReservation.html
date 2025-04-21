@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservation Details - Airline Reservation System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container header-container">
+            <div class="logo">
+                <i class="fas fa-plane"></i>
+                <span>Airline Reservation System</span>
+            </div>
+            <div class="user-section" sec:authorize="isAuthenticated()">
+                <div class="user-info">
+                    <span>Welcome, <strong sec:authentication="name"></strong>!</span>
+                </div>
+                <form action="/logout" method="post">
+                    <button type="submit" class="btn btn-danger">Logout</button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="container nav-container">
+            <ul class="nav-menu" sec:authorize="hasRole('USER')">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/showAllFlights">Flights</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/showParticularFlightDetails">Flight Details</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/getPassengerDetails">Passengers</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/getReservation">Reservations</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <h1 class="page-title">Reservation Management</h1>
+
+            <div id="error-container" class="alert alert-danger" style="display: none;">
+                <span id="error-message"></span>
+            </div>
+
+            <div id="success-container" class="alert alert-success" style="display: none;">
+                <span id="success-message"></span>
+            </div>
+
+            <div class="actions-container">
+                <button id="viewReservationBtn" class="btn btn-primary active" onclick="showViewReservationForm()">
+                    <i class="fas fa-search"></i> View Reservation
+                </button>
+                <button id="createReservationBtn" class="btn btn-primary" onclick="showCreateReservationForm()">
+                    <i class="fas fa-plus"></i> Create Reservation
+                </button>
+            </div>
+
+            <!-- View Reservation Form -->
+            <div id="viewReservationForm" class="form-container">
+                <form id="reservationForm">
+                    <div class="form-group">
+                        <label for="number" class="form-label">Reservation Number</label>
+                        <input type="text" id="number" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="button" class="btn btn-primary" onclick="getReservation()">Search</button>
+                        <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Create Reservation Form -->
+            <div id="createReservationForm" class="form-container" style="display: none;">
+                <form id="newReservationForm">
+                    <div class="form-group">
+                        <label for="passengerId" class="form-label">Passenger ID</label>
+                        <input type="text" id="passengerId" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="flightNumbers" class="form-label">Flight Number</label>
+                        <input type="text" id="flightNumbers" class="form-control" required>
+                        <small class="form-text text-muted">Enter a single flight number (e.g., FL001).</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="button" class="btn btn-success" onclick="createReservation()">Create</button>
+                        <button type="button" class="btn btn-secondary" onclick="clearCreateForm()">Clear</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="reservationDetails" style="display: none; margin-top: 2rem;">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Reservation Details</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table class="table">
+                                <tr>
+                                    <th>Reservation Number</th>
+                                    <td id="reservation-number"></td>
+                                </tr>
+                                <tr>
+                                    <th>Origin</th>
+                                    <td id="reservation-origin"></td>
+                                </tr>
+                                <tr>
+                                    <th>Destination</th>
+                                    <td id="reservation-destination"></td>
+                                </tr>
+                                <tr>
+                                    <th>Price</th>
+                                    <td id="reservation-price"></td>
+                                </tr>
+                                <tr>
+                                    <th>Passenger</th>
+                                    <td id="reservation-passenger"></td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div style="margin-top: 20px;">
+                            <h4>Flights</h4>
+                            <div class="table-container">
+                                <table class="table" id="flights-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Flight Number</th>
+                                            <th>Origin</th>
+                                            <th>Destination</th>
+                                            <th>Departure</th>
+                                            <th>Arrival</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Flight details will be added dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="copyright">
+                &copy; 2024 Airline Reservation System. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function showViewReservationForm() {
+            document.getElementById('viewReservationForm').style.display = 'block';
+            document.getElementById('createReservationForm').style.display = 'none';
+            document.getElementById('viewReservationBtn').classList.add('active');
+            document.getElementById('createReservationBtn').classList.remove('active');
+            document.getElementById('error-container').style.display = 'none';
+            document.getElementById('success-container').style.display = 'none';
+            document.getElementById('reservationDetails').style.display = 'none';
+        }
+
+        function showCreateReservationForm() {
+            document.getElementById('viewReservationForm').style.display = 'none';
+            document.getElementById('createReservationForm').style.display = 'block';
+            document.getElementById('viewReservationBtn').classList.remove('active');
+            document.getElementById('createReservationBtn').classList.add('active');
+            document.getElementById('error-container').style.display = 'none';
+            document.getElementById('success-container').style.display = 'none';
+            document.getElementById('reservationDetails').style.display = 'none';
+        }
+
+        function clearForm() {
+            document.getElementById('number').value = '';
+            document.getElementById('error-container').style.display = 'none';
+            document.getElementById('reservationDetails').style.display = 'none';
+        }
+
+        function clearCreateForm() {
+            document.getElementById('passengerId').value = '';
+            document.getElementById('flightNumbers').value = '';
+            document.getElementById('error-container').style.display = 'none';
+            document.getElementById('success-container').style.display = 'none';
+        }
+
+        function getReservation() {
+            var number = document.getElementById("number").value;
+            
+            if (!number.trim()) {
+                document.getElementById('error-container').style.display = 'block';
+                document.getElementById('error-message').textContent = 'Please enter a reservation number.';
+                document.getElementById('reservationDetails').style.display = 'none';
+                return;
+            }
+            
+            var url = "/reservation/" + number;
+
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            throw new Error(err.message || 'Reservation not found');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(reservation => {
+                    displayReservationDetails(reservation);
+                    document.getElementById('error-container').style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('error-container').style.display = 'block';
+                    document.getElementById('error-message').textContent = error.message;
+                    document.getElementById('reservationDetails').style.display = 'none';
+                });
+        }
+
+        function createReservation() {
+            var passengerId = document.getElementById("passengerId").value;
+            var flightNumber = document.getElementById("flightNumbers").value.trim();
+            
+            if (!passengerId.trim() || !flightNumber) {
+                document.getElementById('error-container').style.display = 'block';
+                document.getElementById('error-message').textContent = 'Please enter both passenger ID and flight number.';
+                return;
+            }
+            
+            var url = '/reservation';
+            var formData = new FormData();
+            formData.append('passengerId', passengerId);
+            formData.append('flightNumbers', flightNumber);
+            
+            // Clear any existing error messages
+            document.getElementById('error-container').style.display = 'none';
+            document.getElementById('success-container').style.display = 'none';
+            
+            // Show a loading indicator
+            var loadingMessage = document.createElement('div');
+            loadingMessage.id = 'loading-message';
+            loadingMessage.className = 'alert alert-info';
+            loadingMessage.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating reservation...';
+            document.getElementById('createReservationForm').prepend(loadingMessage);
+            
+            fetch(url, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                // Remove loading indicator
+                var loadingElem = document.getElementById('loading-message');
+                if (loadingElem) loadingElem.remove();
+                
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        if (err.badRequest && err.badRequest.message) {
+                            throw new Error(err.badRequest.message);
+                        } else {
+                            throw new Error(err.message || 'Failed to create reservation');
+                        }
+                    });
+                }
+                return response.json();
+            })
+            .then(reservation => {
+                document.getElementById('success-container').style.display = 'block';
+                document.getElementById('success-message').textContent = 'Reservation created successfully! Reservation Number: ' + reservation.reservationNumber;
+                
+                // Clear the form
+                clearCreateForm();
+                
+                // Display the reservation details
+                displayReservationDetails(reservation);
+                document.getElementById('reservationDetails').style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('error-container').style.display = 'block';
+                
+                // Check for specific duplicate booking error
+                if (error.message && (
+                    error.message.includes("already has a booking") || 
+                    error.message.includes("already booked") ||
+                    error.message.includes("Duplicate entry")
+                )) {
+                    document.getElementById('error-message').innerHTML = 
+                        '<strong>Duplicate Booking Error:</strong> ' + 
+                        'This passenger already has a booking for flight ' + flightNumber + 
+                        '. Each passenger can only book a flight once.';
+                } else {
+                    document.getElementById('error-message').textContent = error.message;
+                }
+                
+                // Hide any existing reservation details
+                document.getElementById('reservationDetails').style.display = 'none';
+            });
+        }
+
+        function displayReservationDetails(reservation) {
+            // Display basic reservation info
+            document.getElementById('reservation-number').textContent = reservation.reservationNumber;
+            document.getElementById('reservation-origin').textContent = reservation.origin;
+            document.getElementById('reservation-destination').textContent = reservation.destination;
+            document.getElementById('reservation-price').textContent = '$' + reservation.price;
+            
+            // Display passenger info
+            if (reservation.passenger) {
+                const passenger = reservation.passenger;
+                document.getElementById('reservation-passenger').textContent = 
+                    `${passenger.firstName || ''} ${passenger.lastName || ''} (ID: ${passenger.id || ''})`;
+            }
+            
+            // Display flights info
+            const flightsTable = document.getElementById('flights-table').getElementsByTagName('tbody')[0];
+            flightsTable.innerHTML = '';
+            
+            if (reservation.flights && reservation.flights.length > 0) {
+                reservation.flights.forEach(flight => {
+                    const row = document.createElement('tr');
+                    
+                    // Format dates if they exist
+                    let departureTime = 'N/A';
+                    let arrivalTime = 'N/A';
+                    
+                    if (flight.departureTime) {
+                        const date = new Date(flight.departureTime);
+                        departureTime = date.toLocaleString();
+                    }
+                    
+                    if (flight.arrivalTime) {
+                        const date = new Date(flight.arrivalTime);
+                        arrivalTime = date.toLocaleString();
+                    }
+                    
+                    row.innerHTML = `
+                        <td>${flight.flightNumber || 'N/A'}</td>
+                        <td>${flight.origin || 'N/A'}</td>
+                        <td>${flight.destination || 'N/A'}</td>
+                        <td>${departureTime}</td>
+                        <td>${arrivalTime}</td>
+                    `;
+                    
+                    flightsTable.appendChild(row);
+                });
+            } else {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="5" style="text-align: center;">No flights found for this reservation</td>';
+                flightsTable.appendChild(row);
+            }
+            
+            // Show the reservation details section
+            document.getElementById('reservationDetails').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

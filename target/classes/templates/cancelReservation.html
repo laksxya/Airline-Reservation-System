@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cancel Reservation - Airline Reservation System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container header-container">
+            <div class="logo">
+                <i class="fas fa-plane"></i>
+                <span>Airline Reservation System</span>
+            </div>
+            <div class="user-section" sec:authorize="isAuthenticated()">
+                <div class="user-info">
+                    <span>Welcome, <strong sec:authentication="name"></strong>!</span>
+                </div>
+                <form action="/logout" method="post">
+                    <button type="submit" class="btn btn-danger">Logout</button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="container nav-container">
+            <ul class="nav-menu" sec:authorize="hasRole('USER')">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/showAllFlights">Flights</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/showParticularFlightDetails">Flight Details</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/getPassengerDetails">Passengers</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/getReservation">Reservations</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <h1 class="page-title">Cancel Reservation</h1>
+
+            <div id="error-container" class="alert alert-danger" style="display: none;">
+                <span id="error-message"></span>
+            </div>
+
+            <div id="success-container" class="alert alert-success" style="display: none;">
+                <span id="success-message"></span>
+            </div>
+
+            <div class="form-container">
+                <form id="cancelForm">
+                    <div class="form-group">
+                        <label for="reservationNumber" class="form-label">Reservation Number</label>
+                        <input type="text" id="reservationNumber" name="reservationNumber" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="xml" class="form-label">XML Data (Optional)</label>
+                        <input type="text" id="xml" name="xml" class="form-control">
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: 2rem;">
+                        <button type="submit" class="btn btn-danger">Cancel Reservation</button>
+                        <button type="button" class="btn btn-secondary" onclick="window.location.href='/getReservation'">Back to Reservations</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="copyright">
+                &copy; 2024 Airline Reservation System. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById("cancelForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            
+            var reservationNumber = document.getElementById("reservationNumber").value;
+            var xml = document.getElementById("xml").value;
+            
+            if (!reservationNumber.trim()) {
+                document.getElementById('error-container').style.display = 'block';
+                document.getElementById('error-message').textContent = 'Please enter a valid reservation number.';
+                return;
+            }
+            
+            if (confirm("Are you sure you want to cancel reservation " + reservationNumber + "? This action cannot be undone.")) {
+                fetch("/reservation/" + reservationNumber + "?xml=" + xml, {
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            throw new Error(err.error ? err.error.message : 'Failed to cancel reservation');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('success-container').style.display = 'block';
+                    document.getElementById('success-message').textContent = data.message || 'Reservation cancelled successfully.';
+                    document.getElementById('error-container').style.display = 'none';
+                    document.getElementById('cancelForm').reset();
+                })
+                .catch(error => {
+                    document.getElementById('error-container').style.display = 'block';
+                    document.getElementById('error-message').textContent = error.message;
+                    document.getElementById('success-container').style.display = 'none';
+                });
+            }
+        });
+    </script>
+</body>
+</html>

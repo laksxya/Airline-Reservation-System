@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Airline Reservation System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container header-container">
+            <div class="logo">
+                <i class="fas fa-plane"></i>
+                <span>Airline Reservation System</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <div class="auth-container">
+                <div class="auth-form">
+                    <h2 class="auth-title">Create an Account</h2>
+                    
+                    <div th:if="${errorMessage}" class="alert alert-danger">
+                        <span th:text="${errorMessage}"></span>
+                    </div>
+                    
+                    <form th:action="@{/signup}" method="post">
+                        <div class="form-group">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" id="username" name="username" class="form-control" required autofocus>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" id="password" name="password" class="form-control" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="role" class="form-label">Role</label>
+                            <select id="role" name="role" class="form-select" required>
+                                <option value="USER">User</option>
+                                <option value="ADMIN">Admin</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">Sign Up</button>
+                        </div>
+                    </form>
+                    
+                    <div class="auth-redirect">
+                        Already have an account? <a href="/login">Log in</a>
+                    </div>
+                    
+                    <div class="auth-redirect">
+                        <a href="/">Back to Home</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="copyright">
+                &copy; 2024 Airline Reservation System. All rights reserved.
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

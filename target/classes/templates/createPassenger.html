@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Passenger - Airline Reservation System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container header-container">
+            <div class="logo">
+                <i class="fas fa-plane"></i>
+                <span>Airline Reservation System</span>
+            </div>
+            <div class="user-section" sec:authorize="isAuthenticated()">
+                <div class="user-info">
+                    <span>Welcome, <strong sec:authentication="name"></strong>!</span>
+                </div>
+                <form action="/logout" method="post">
+                    <button type="submit" class="btn btn-danger">Logout</button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="container nav-container">
+            <ul class="nav-menu" sec:authorize="hasRole('USER')">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/showAllFlights">Flights</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/showParticularFlightDetails">Flight Details</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/getPassengerDetails">Passengers</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/getReservation">Reservations</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <h1 class="page-title">Create New Passenger</h1>
+
+            <div id="error-container" class="alert alert-danger" style="display: none;">
+                <span id="error-message"></span>
+            </div>
+
+            <div id="success-container" class="alert alert-success" style="display: none;">
+                <span id="success-message"></span>
+            </div>
+
+            <div id="passenger-id-container" class="alert alert-info" style="display: none; margin-bottom: 20px;">
+                <p><strong>⚠️ IMPORTANT NOTICE ⚠️</strong></p>
+                <p>Please <span style="color: red; font-weight: bold;">SAVE THIS PASSENGER ID</span> immediately! This ID is <strong>unique</strong> and cannot be recovered once you leave or refresh this page:</p>
+                <div class="passenger-id-box" style="background-color: #f8f9fa; padding: 10px; border: 2px dashed #007bff; border-radius: 5px; margin: 10px 0; text-align: center;">
+                    <span id="passenger-id" style="font-weight: bold; font-size: 1.5em; letter-spacing: 1px;"></span>
+                    <div style="margin-top: 10px;">
+                        <button id="copy-id-btn" class="btn btn-primary" onclick="copyPassengerId()">
+                            <i class="fas fa-copy"></i> Copy ID
+                        </button>
+                        <button id="save-id-btn" class="btn btn-info" style="margin-left: 10px;" onclick="savePassengerId()">
+                            <i class="fas fa-download"></i> Save as File
+                        </button>
+                    </div>
+                </div>
+                <p style="margin-top: 10px; font-weight: bold;">This ID will be REQUIRED when creating reservations and cannot be retrieved if lost!</p>
+                <p>We recommend copying this ID or writing it down before proceeding.</p>
+            </div>
+
+            <div class="form-container">
+                <form id="passengerForm" action="/passenger" method="post">
+                    <div class="form-group">
+                        <label for="firstname" class="form-label">First Name</label>
+                        <input type="text" id="firstname" name="firstname" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="lastname" class="form-label">Last Name</label>
+                        <input type="text" id="lastname" name="lastname" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="age" class="form-label">Age</label>
+                        <input type="number" id="age" name="age" class="form-control" min="1" max="120" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="gender" class="form-label">Gender</label>
+                        <select id="gender" name="gender" class="form-select" required>
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="text" id="phone" name="phone" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: 2rem;">
+                        <button type="submit" class="btn btn-primary">Create Passenger</button>
+                        <button type="button" class="btn btn-secondary" onclick="window.location.href='/'">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="action-links" style="margin-top: 30px; text-align: center;">
+                <a href="/getReservation" class="btn btn-outline-primary">
+                    <i class="fas fa-ticket-alt"></i> Go to Reservations
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="copyright">
+                &copy; 2024 Airline Reservation System. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        let passengerIdShown = false;
+        let passengerIdCopied = false;
+
+        // Add event listener for beforeunload event
+        window.addEventListener('beforeunload', function(e) {
+            // If the passenger ID is shown but not acknowledged as copied
+            if (passengerIdShown && !passengerIdCopied) {
+                // Standard way of showing a confirmation dialog
+                e.preventDefault();
+                e.returnValue = 'You have not copied the passenger ID. This unique ID cannot be recovered later. Are you sure you want to leave?';
+                return e.returnValue;
+            }
+        });
+
+        document.getElementById('passengerForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('/passenger', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.badRequest?.message || 'Failed to create passenger');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Show success message
+                document.getElementById('success-container').style.display = 'block';
+                document.getElementById('success-message').textContent = `Passenger ${data.firstName} ${data.lastName} created successfully!`;
+                
+                // Display the passenger ID in the dedicated container
+                document.getElementById('passenger-id-container').style.display = 'block';
+                document.getElementById('passenger-id').textContent = data.id;
+                
+                // Set flag that ID is shown
+                passengerIdShown = true;
+                passengerIdCopied = false;
+                
+                // Hide error container if visible
+                document.getElementById('error-container').style.display = 'none';
+                
+                // Reset form
+                document.getElementById('passengerForm').reset();
+                
+                // Scroll to the ID container to make sure user sees it
+                document.getElementById('passenger-id-container').scrollIntoView({ behavior: 'smooth' });
+            })
+            .catch(error => {
+                document.getElementById('error-container').style.display = 'block';
+                document.getElementById('error-message').textContent = error.message;
+                document.getElementById('success-container').style.display = 'none';
+                document.getElementById('passenger-id-container').style.display = 'none';
+                passengerIdShown = false;
+            });
+        });
+        
+        function copyPassengerId() {
+            const passengerId = document.getElementById('passenger-id').textContent;
+            navigator.clipboard.writeText(passengerId)
+                .then(() => {
+                    const copyBtn = document.getElementById('copy-id-btn');
+                    copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    copyBtn.classList.remove('btn-primary');
+                    copyBtn.classList.add('btn-success');
+                    
+                    // Mark as copied
+                    passengerIdCopied = true;
+                    
+                    // Change back after 2 seconds
+                    setTimeout(() => {
+                        copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy ID';
+                        copyBtn.classList.remove('btn-success');
+                        copyBtn.classList.add('btn-primary');
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Failed to copy text: ', err);
+                    alert('Failed to copy ID automatically. Please manually select and copy the ID: ' + passengerId);
+                });
+        }
+
+        function savePassengerId() {
+            const passengerId = document.getElementById('passenger-id').textContent;
+            const passengerName = document.getElementById('success-message').textContent.replace('Passenger ', '').replace(' created successfully!', '');
+            
+            // Create content for the file with more information
+            const content = `AIRLINE RESERVATION SYSTEM - PASSENGER ID
+------------------------------------------
+Passenger ID: ${passengerId}
+Passenger Name: ${passengerName}
+Created Date: ${new Date().toLocaleString()}
+------------------------------------------
+IMPORTANT: Keep this ID safe. You will need it to create and manage reservations.
+`;
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `passenger_id_${passengerId}.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Mark as copied/saved
+            passengerIdCopied = true;
+            
+            // Update the save button
+            const saveBtn = document.getElementById('save-id-btn');
+            saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+            saveBtn.classList.remove('btn-info');
+            saveBtn.classList.add('btn-success');
+            
+            // Change back after 2 seconds
+            setTimeout(() => {
+                saveBtn.innerHTML = '<i class="fas fa-download"></i> Save as File';
+                saveBtn.classList.remove('btn-success');
+                saveBtn.classList.add('btn-info');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
+
